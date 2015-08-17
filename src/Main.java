@@ -11,7 +11,7 @@ public class Main {
             public void run() {
                 System.out.println("Hello World!");
                 //new Clients("Scott","192.168.0.22",7777);//garbage will get this data from a,ogin screen eventually
-                new Client("Scott","192.168.0.22",7777);
+                new Client("Scott","localhost",7777);
             }
         });
     }

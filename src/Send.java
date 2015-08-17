@@ -1,6 +1,5 @@
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.Socket;
 
 /**
@@ -15,9 +14,9 @@ public class Send {
 
 
     public Send(String data, String ip, int port)throws IOException{
+        System.out.println("Preparing to Transmit");
         clientSocket = new Socket(ip,port);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
         outToServer.writeBytes(data);
-
     }
 }

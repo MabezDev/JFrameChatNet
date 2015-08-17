@@ -21,12 +21,10 @@ public class Recieve {
     }
 
     public String getDataFromServer() throws IOException{
-        while(messageServer.equals(null)) {
-            clientSocket = new Socket(ClientIP, port);
-            BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            messageServer = inFromServer.readLine();
-            System.out.println("Recieve Class, Message From server: " + messageServer);
-        }
+        clientSocket = new Socket(ClientIP, port);
+        BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        messageServer = inFromServer.readLine();
+        System.out.println("Receive Class, Message From server: " + messageServer);
         return messageServer;
 
     }

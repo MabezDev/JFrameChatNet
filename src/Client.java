@@ -4,15 +4,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.IOException;
 
 /**
  * Created by Scott on 17/08/2015.
  */
-public class Client extends JFrame{
+public class Client extends JFrame {
 
     private String USER_NAME;
     private String IP_ADDRESS;
     private int PORT;
+
+    private Thread listen;
 
 
     private JPanel rootPanel;
@@ -23,15 +26,16 @@ public class Client extends JFrame{
 
     private String messageToSend;
 
-    public Client(String UN,String IP,int PORT){
+    public Client(String UN, String IP, int PORT) {
         super("IRC Chat");
 
         this.USER_NAME = UN;
         this.IP_ADDRESS = IP;
         this.PORT = PORT;
 
+
         rootPanel.setLayout(rootPanel.getLayout());
-        rootPanel.setBounds(400,400,800,600);
+        rootPanel.setBounds(400, 400, 800, 600);
         this.setContentPane(rootPanel);
 
 
@@ -42,10 +46,6 @@ public class Client extends JFrame{
 
 
         messageBox.setEditable(false);
-
-
-
-
 
 
         sendButton.addActionListener(new ActionListener() {
@@ -63,9 +63,9 @@ public class Client extends JFrame{
 
             @Override
             public void keyPressed(KeyEvent e) {
-                if(e.getKeyCode()== KeyEvent.VK_ENTER){
-                    if(messageText.getText().toString()!="\n\r"){///need to stop enter spam (blank messages)
-                        System.out.println("TestBegin"+messageText.getText().toString()+"TestEnd");
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    if (messageText.getText().toString() != "\n\r") {///need to stop enter spam (blank messages)
+                        System.out.println("TestBegin" + messageText.getText().toString() + "TestEnd");
                         sendButton.doClick();
                     }
 
@@ -78,9 +78,26 @@ public class Client extends JFrame{
             }
         });
 
+        final Recieve recClass = new Recieve(IP_ADDRESS, PORT);
+        System.out.println("Binding Reception on PORT: " + PORT);
 
+        listen = new Thread(new Runnable() {
+            @Override
+            public void run() {
 
+                System.out.println("Thread Starting");
+                String message = "";
+                try {
+                    while (message == "") {
+                        message = recClass.getDataFromServer();
 
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
     }
 
     private void dealWithText(){
@@ -97,8 +114,22 @@ public class Client extends JFrame{
 
     private void setMessageBox(String text){
         messageBox.append(USER_NAME+": " + text + "\n\r");
+        Thread Send = new Thread("SendingThread"){
+            public  void run(){
+                try {
+                    Send sendIt = new Send(messageToSend, IP_ADDRESS, PORT);
+                } catch (IOException e){
+                    e.printStackTrace();
+                }
+            }
+
+        };
+        Send.start();
 
     }
+
+
+
 
 
 
