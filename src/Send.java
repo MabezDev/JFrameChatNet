@@ -7,15 +7,9 @@ import java.net.Socket;
  */
 public class Send {
 
-    private Socket clientSocket;
-    private String data;
 
-
-
-
-    public Send(String data, String ip, int port)throws IOException{
+    public Send(Socket clientSocket,String data)throws IOException{
         System.out.println("Preparing to Transmit");
-        clientSocket = new Socket(ip,port);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
         outToServer.writeBytes(data);
     }

@@ -8,23 +8,30 @@ import java.net.*;
  */
 public class Recieve {
 
-    private Socket clientSocket;
+
     private String messageServer;
-    private String ClientIP;
-    private int port;
+    private Socket clientSocket;
 
 
-    public Recieve(String ClientIP, int port){
-        this.ClientIP = ClientIP;
-        this.port = port;
+    public Recieve(Socket clientSocket){
+        this.clientSocket = clientSocket;
 
     }
 
     public String getDataFromServer() throws IOException{
-        clientSocket = new Socket(ClientIP, port);
-        BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        /*BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         messageServer = inFromServer.readLine();
         System.out.println("Receive Class, Message From server: " + messageServer);
+        */
+        String built="";
+        InputStreamReader in = new  InputStreamReader(clientSocket.getInputStream());
+        built += (char)in.read();
+        while(!built.contains("/e/")){//handles the end of the message
+            built += (char)in.read();
+            System.out.println("Built Progress: "+built);
+
+        }
+        messageServer = built;
         return messageServer;
 
     }
