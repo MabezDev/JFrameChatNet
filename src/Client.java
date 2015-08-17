@@ -90,6 +90,7 @@ public class Client extends JFrame {
                 try {
                     while (message == "") {
                         message = recClass.getDataFromServer();
+                        messageBox.append(message+ "\n\r");//addto text area
 
                     }
                 } catch (IOException e) {
@@ -102,7 +103,7 @@ public class Client extends JFrame {
 
     private void dealWithText(){
         messageToSend = messageText.getText();
-        System.out.println("Attempting to send: " + messageToSend);
+
         setMessageBox(messageToSend);
         messageText.setText("");
 
@@ -113,7 +114,9 @@ public class Client extends JFrame {
      */
 
     private void setMessageBox(String text){
-        messageBox.append(USER_NAME+": " + text + "\n\r");
+        messageToSend = USER_NAME+": " + text + " /e/";
+        //messageBox.append(USER_NAME+": " + text + "/e/"); //"\n\r"
+        System.out.println("Attempting to send: " + messageToSend);
         Thread Send = new Thread("SendingThread"){
             public  void run(){
                 try {

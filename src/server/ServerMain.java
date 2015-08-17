@@ -20,6 +20,7 @@ public class ServerMain {
         int port;
 
         port = 7777;
+        System.out.println("Starting Server. Binding to port: "+port);
         new ServerMain(port);
 
     }
