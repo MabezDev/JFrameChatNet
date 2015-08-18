@@ -1,12 +1,12 @@
 package server;
 
-import java.io.BufferedReader;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
+
 
 /**
  * Created by Scott on 17/08/2015.
@@ -17,6 +17,8 @@ public class Server implements Runnable {
     private int port;
     private Thread run, send;
     private Socket connectionSocket;
+    private DataOutputStream outToClient;
+    private InputStreamReader inFromClient;
 
 
     public Server(int port) throws IOException {
@@ -25,13 +27,26 @@ public class Server implements Runnable {
         run = new Thread(this, "Server");
         run.start();
 
+
     }
 
     public void send(String data)throws IOException{//add client id param later
-        System.out.println("Sending: "+data);
-        String Data = data;
-        DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
-        outToClient.writeBytes(Data);
+        final String Data = data;
+        send = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    System.out.println("Sending: " + Data);
+                    outToClient.writeBytes(Data);
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+            }
+        }){
+
+        };
+        send.start();
+
     }
 
     @Override
@@ -46,34 +61,50 @@ public class Server implements Runnable {
         //Scanner consoleInput = new Scanner(System.in); //gather commands from cli
 
 
-        while (true) {
-            //main server loop, here we will decide using commands and input fro other users where to send messages
-            try {
-                setUpSocket();
 
-            } catch (IOException e) {
+
+
+            //main server loop, here we will decide using commands and input fro other users where to send messages
+        try {
+            connectionSocket = serverSocket.accept();
+            setUpStreams();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        while(true) {
+            try {
+                listen();
+            }catch (IOException e){
                 e.printStackTrace();
             }
-
         }
+
+
 
 
     }
 
-    private void setUpSocket() throws IOException {
+    private void listen() throws IOException{
         String built ="";
-        connectionSocket = serverSocket.accept();
-        InputStreamReader in = new  InputStreamReader(connectionSocket.getInputStream());
-        built += (char)in.read();
+        built += (char)inFromClient.read();
         while(!built.contains("/e/")){//handles the end of the message
-            built += (char)in.read();
+            built += (char)inFromClient.read();
             System.out.println("Built Progress: "+built);
         }
         //in.close();// not needed as we want to keep the connection open for server replies
         System.out.println("Found end of message: "+ built);
         processData(built);
+    }
+
+    private void setUpStreams() throws IOException {
+        outToClient = new DataOutputStream(connectionSocket.getOutputStream());
+        outToClient.flush();
+        inFromClient = new  InputStreamReader(connectionSocket.getInputStream());
 
     }
+
+
 
     private void processData(String data)throws IOException{
         String Data = data;

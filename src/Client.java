@@ -4,13 +4,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 
 /**
  * Created by Scott on 17/08/2015.
  */
-public class Client extends JFrame {
+public class Client extends JFrame  {
 
     private String USER_NAME;
     private String IP_ADDRESS;
@@ -25,15 +27,17 @@ public class Client extends JFrame {
     private JTextArea messageBox;
     private JTextField messageText;
     private JScrollPane scroll;
+    private DataOutputStream outToServer;
+    private InputStreamReader inFromServer;
 
     private String messageToSend;
 
-    public Client(String UN, String IP, int PORT) {
+    public Client(String UN, String IP, int port)  {
         super("IRC Chat");
 
         this.USER_NAME = UN;
         this.IP_ADDRESS = IP;
-        this.PORT = PORT;
+        this.PORT = port;
 
 
 
@@ -81,6 +85,21 @@ public class Client extends JFrame {
             }
         });
 
+        listen = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while(true) {
+                        listen();
+                    }
+                    } catch (IOException e) {
+                    e.printStackTrace();
+
+
+                }
+            }
+        });
+
         /*
         Establish Connection with server
          */
@@ -89,6 +108,9 @@ public class Client extends JFrame {
             clientSocket = new Socket(IP_ADDRESS, PORT);
             if(clientSocket.isConnected()){
                 messageBox.append("Connected as :"+USER_NAME+" At: "+IP_ADDRESS+":"+PORT+ "\n\r");
+                setUpStreams();
+                //start Listening thread;
+                listen.start();
             }
             else{
                 messageBox.append("Connection to server failed");
@@ -97,32 +119,18 @@ public class Client extends JFrame {
             e.printStackTrace();
         }
 
+    }
 
-
-
-        final Recieve recClass = new Recieve(clientSocket);
-        System.out.println("Binding Reception on PORT: " + PORT);
-
-        listen = new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-                System.out.println("Thread Starting");
-                String message = "";
-                try {
-                    while (message=="") {
-                        System.out.println("inloop");
-                        message = recClass.getDataFromServer();
-                        messageBox.append(message + "\n\r");//addto text area
-
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
-        listen.start();
+    private void listen() throws IOException{
+        String built ="";
+        built += (char)inFromServer.read();
+        while(!built.contains("/e/")){//handles the end of the message
+            built += (char)inFromServer.read();
+            System.out.println("Built Progress: "+built);
+        }
+        //in.close();// not needed as we want to keep the connection open for server replies
+        System.out.println("Found end of message: "+ built);
+        messageBox.append(built + "\n\r");
     }
 
     private void dealWithText(){
@@ -144,7 +152,9 @@ public class Client extends JFrame {
         Thread Send = new Thread("SendingThread"){
             public  void run(){
                 try {
-                    Send sendIt = new Send(clientSocket,messageToSend);
+                    //Send sendIt = new Send(clientSocket,messageToSend);
+
+                    outToServer.writeBytes(messageToSend);
                 } catch (IOException e){
                     e.printStackTrace();
                 }
@@ -153,6 +163,12 @@ public class Client extends JFrame {
         };
         Send.start();
 
+    }
+
+    private void setUpStreams() throws IOException{
+        outToServer = new DataOutputStream(clientSocket.getOutputStream());
+        outToServer.flush();
+        inFromServer = new  InputStreamReader(clientSocket.getInputStream());
     }
 
 

@@ -19,6 +19,7 @@ public class Recieve {
     }
 
     public String getDataFromServer() throws IOException{
+        System.out.println("GetDataICalled");
         /*BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         messageServer = inFromServer.readLine();
         System.out.println("Receive Class, Message From server: " + messageServer);
