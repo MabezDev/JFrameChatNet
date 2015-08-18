@@ -29,6 +29,10 @@ public class Client extends JFrame  {
     private JScrollPane scroll;
     private DataOutputStream outToServer;
     private InputStreamReader inFromServer;
+    private final static int MAX_ATTEMPTS = 5;
+
+    private Thread starter;
+    private boolean isConnected;
 
     private String messageToSend;
 
@@ -92,10 +96,9 @@ public class Client extends JFrame  {
                     while(true) {
                         listen();
                     }
-                    } catch (IOException e) {
+                } catch (IOException e) {
+                    messageBox.append("Disconnected From Server.");
                     e.printStackTrace();
-
-
                 }
             }
         });
@@ -103,23 +106,72 @@ public class Client extends JFrame  {
         /*
         Establish Connection with server
          */
+        starter = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                startConnection();
+            }
+        });
+        starter.start();
 
+
+
+    }
+
+    private void startConnection(){
+        try {
+            attemptConnection();
+            setUpStreams();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        listen.start();
+        starter.interrupt();
+
+        //need to add timout and recon but this is throwing a weird threadexception
+        /*int numOfAttempts = 0;
+
+        while(numOfAttempts < MAX_ATTEMPTS) {
+            isConnected = attemptConnection();
+            if(isConnected){
+                //open IO streams to receive and send data
+                try {
+                    setUpStreams();
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+                //start Listening thread;
+                listen.start();
+                //kill starter once connected
+                starter.interrupt();
+            } else {
+                numOfAttempts++;
+                System.out.println("Didnt Connect");
+                //
+            }
+        }*/
+
+    }
+
+    private boolean attemptConnection(){
         try {
             clientSocket = new Socket(IP_ADDRESS, PORT);
             if(clientSocket.isConnected()){
+                //show that user is connected
                 messageBox.append("Connected as :"+USER_NAME+" At: "+IP_ADDRESS+":"+PORT+ "\n\r");
-                setUpStreams();
-                //start Listening thread;
-                listen.start();
+                return true;
             }
             else{
-                messageBox.append("Connection to server failed");
+                messageBox.append("Connection to server failed.");
+                return false;
             }
         }catch(IOException e){
+            System.out.println("In socket catch");
             e.printStackTrace();
+            return false;
         }
-
     }
+
 
     private void listen() throws IOException{
         String built ="";
@@ -128,7 +180,6 @@ public class Client extends JFrame  {
             built += (char)inFromServer.read();
             System.out.println("Built Progress: "+built);
         }
-        //in.close();// not needed as we want to keep the connection open for server replies
         System.out.println("Found end of message: "+ built);
         messageBox.append(built + "\n\r");
     }
