@@ -233,7 +233,7 @@ public class Client extends JFrame  {
                     String finishedData = built.split("/m/|/ID/")[1];
                     messageBox.append(finishedData + "\n\r");
                 }
-                if(lastMessage.startsWith("/d/")){
+                /*if(lastMessage.startsWith("/d/")){
                     try {
                         Thread.sleep(2000);
                     }catch (Exception e){
@@ -241,15 +241,15 @@ public class Client extends JFrame  {
                     }
                     closeConnection();
                     this.dispose();
-                }
+                }*/
 
 
             } catch (IOException e) {
-                System.out.println("Disconnected from server.");
-                closeConnection();
-                if(!lastMessage.startsWith("/d/")) {// add a clause for banned?
+                //System.out.println("Disconnected from server.");
+                //closeConnection();
+                /*if(!lastMessage.startsWith("/d/")) {// add a clause for banned?
                     startConnection();
-                }
+                }*/
             }
         }
     }
