@@ -223,6 +223,7 @@ public class Client extends JFrame  {
                     int clientID = Integer.parseInt(ID);
                     System.out.println("Setting ID to: "+clientID);
                     this.ID = clientID;
+                    send("/u/ "+USER_NAME+" /ID/ "+this.ID+" /e/");//send username to server
                 }
                 if(built.startsWith("/m/")){
                     System.out.println("Found end of message: " + built);

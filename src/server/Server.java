@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Scanner;
 
 
 /**
@@ -47,11 +48,8 @@ public class Server implements Runnable {
             e.printStackTrace();
         }
 
-        //manageClients();
+        mngServer();
 
-        //Scanner consoleInput = new Scanner(System.in); //gather commands from cli
-
-        //stopAndRetry();
         receive();
 
 
@@ -64,18 +62,76 @@ public class Server implements Runnable {
 
     }
 
-    private void manageClients(){
+    private void manageServer(){
+        Scanner io = new Scanner(System.in);
+        while(true){
+            String command = io.nextLine();
+            System.out.println(command);
+            if(command.startsWith("/")){
+                String splitCmd = command.split("/")[1];
+                if(splitCmd.equals("help")){
+                    System.out.println("=====-Help-=====");
+                    System.out.println("/kick [ClientID or Username] - kicks the selected client");
+                    System.out.println("/quit - disconnects all clients and closes server.");
+                }
+                if(splitCmd.startsWith("kick")){
+                    String clienttoKick = splitCmd.split(" ")[1].trim();
+                    System.out.println("Start kick:" +clienttoKick);
+                    if(clienttoKick.matches(".*\\d.*")){
+                        // contains a number
+                        kick(Integer.parseInt(clienttoKick));
+                        System.out.println("Kicking: " + Integer.parseInt(clienttoKick));
+                    } else{
+                        kick(clienttoKick);
+                        System.out.println("Kicking: "+ clienttoKick);
+                        // does not contain a number
+                    }
+                }
+            }
+
+        }
+
+    }
+
+    public void kick(int ID){
+        for(int i = 0; i<connectedClients.size();i++){
+            ServerThread client = connectedClients.get(i);
+            if(client.getID()==ID){
+                client.send("/k/ You have been kicked /ID/ "+client.getID()+" /e/");
+                client.closeConnection();
+                connectedClients.remove(i);
+                break;
+            }
+            System.out.println("No such client found on server.");
+        }
+    }
+
+    public void kick(String UserName){
+        for(int i = 0; i<connectedClients.size();i++){
+            ServerThread client = connectedClients.get(i);
+            if(client.getUserName()==UserName){
+                client.send("/k/ You have been kicked /ID/ "+client.getID()+" /e/");
+                client.closeConnection();
+                connectedClients.remove(i);
+                break;
+            }
+        }
+    }
+
+    private void mngServer(){
         Thread mng = new Thread(new Runnable() {
             @Override
             public void run() {
-
+                manageServer();
             }
         });
+        mng.start();
     }
 
 
 
     private void receive(){
+
         while(running) {
             try {
                 Socket clientSocket = serverSocket.accept();

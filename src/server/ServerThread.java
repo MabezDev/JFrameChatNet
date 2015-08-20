@@ -1,5 +1,7 @@
 package server;
 
+import sun.nio.cs.US_ASCII;
+
 import javax.xml.crypto.Data;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -18,6 +20,7 @@ public class ServerThread {
     private InputStreamReader inFromClient;
     private DataOutputStream outToClient;
     private int ID;
+    private String UserName;
 
 
     public ServerThread(Socket client,int id){
@@ -84,6 +87,11 @@ public class ServerThread {
                              built = addId(built);
                             //send a notification message to tell client its ID
                         }
+                        if(built.startsWith("/u/")){
+                            String s = built.split("/u/|/ID/")[1].trim();
+                            UserName = s;
+                            System.out.println("USername: "+UserName);
+                        }
                         Server.processData(built);
 
                     } catch (IOException e) {
@@ -147,6 +155,10 @@ public class ServerThread {
 
     public int getID(){
         return ID;
+    }
+
+    public String getUserName(){
+        return UserName;
     }
 
 
