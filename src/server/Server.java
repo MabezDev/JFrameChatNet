@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
 
 
 /**
@@ -16,13 +18,13 @@ public class Server implements Runnable {
 
     private ServerSocket serverSocket;
     private int port;
-    private Thread run, send;
-    private Socket clientSocket;
+    private Thread run;
     private DataOutputStream outToClient;
-    private InputStreamReader inFromClient;
     private boolean running;
 
-    private ArrayList<ClientID> connectedClients = new ArrayList<ClientID>();
+
+
+    private static ArrayList<ServerThread> connectedClients = new ArrayList<ServerThread>();
 
 
     public Server(int port) throws IOException {
@@ -30,31 +32,9 @@ public class Server implements Runnable {
         this.port = port;
         run = new Thread(this, "Server");
         run.start();
-
-
     }
 
-    public void send(String data,String USERNAME)throws IOException{//add client id param later
-        final String Data = data;
-        final DataOutputStream strP = connectedClients.get(0).getOutputStream();
 
-        send = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    System.out.println("Sending: " + Data);
-                    strP.writeBytes(Data);
-
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-            }
-        }){
-
-        };
-        send.start();
-
-    }
 
     @Override
     public void run() {
@@ -71,18 +51,12 @@ public class Server implements Runnable {
 
         //Scanner consoleInput = new Scanner(System.in); //gather commands from cli
 
-        stopAndRetry();
-
+        //stopAndRetry();
+        receive();
 
 
             //main server loop, here we will decide using commands and input fro other users where to send messages
-        try {
-            clientSocket = serverSocket.accept();
-            setUpStreams(clientSocket);
-            receive();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
 
 
 
@@ -99,60 +73,54 @@ public class Server implements Runnable {
         });
     }
 
-    private void stopAndRetry(){
 
-    }
 
     private void receive(){
         while(running) {
             try {
-                // need to set up a stream every time
-                //serviceClients();
-                String built = "";
-                built += (char) inFromClient.read();
-                while (!built.contains("/e/")) {//handles the end of the message
-                    built += (char) inFromClient.read();
-                    System.out.println("Built Progress: " + built);
-                }
-                //in.close();// not needed as we want to keep the connection open for server replies
-                System.out.println("Found end of message: " + built);
-
-                processData(built);
-
-            }catch (IOException e){
+                Socket clientSocket = serverSocket.accept();
+                ServerThread s = new ServerThread(clientSocket);
+                s.setID(randInt(1,20));
+                connectedClients.add(s);
+            } catch (IOException e) {
                 e.printStackTrace();
-                System.out.println("Listen function  - Client Disconnect.");
-                closeStreams();
-                try{
-                    clientSocket.close();
-                }catch (IOException e2){
-
-                }
-
             }
-        }
-
-    }
-
-
-    private void setUpStreams(Socket clientSocket) throws IOException {
-        outToClient = new DataOutputStream(clientSocket.getOutputStream());
-        outToClient.flush();
-        inFromClient = new  InputStreamReader(clientSocket.getInputStream());
-    }
-
-    private void closeStreams(){
-        try {
-            outToClient.close();
-            inFromClient.close();
-        }catch (IOException e){
 
         }
+
+
     }
 
 
 
-    private void processData(String data)throws IOException{
+    public static ArrayList<ServerThread> getConnectedClients(){
+        return connectedClients;
+    }
+
+    private static void sendToAll(String data)throws IOException{
+        // here send to all clients
+        //for now just send back to the 1 connection
+        for(ServerThread c:connectedClients){
+            c.send(data);
+        }
+
+
+    }
+
+    public static int randInt(int min, int max) {
+
+        // NOTE: Usually this should be a field rather than a method
+        // variable so that it is not re-seeded every call.
+        Random rand = new Random();
+
+        // nextInt is normally exclusive of the top value,
+        // so add 1 to make it inclusive
+        int randomNum = rand.nextInt((max - min) + 1) + min;
+
+        return randomNum;
+    }
+
+    public static void processData(String data)throws IOException{
         String Data = data;
         if(Data.startsWith("/m/")) {
             sendToAll(Data);
@@ -160,18 +128,18 @@ public class Server implements Runnable {
         if(Data.startsWith("/c/")){
             //new connected client, add details
             String name = Data.split("/c/|/e/")[1];
-            connectedClients.add(new ClientID(name,outToClient,inFromClient,0));
             System.out.println("New user connected :"+name);
         }
         if(Data.startsWith("/d/")){
-            String clientToDC = Data.split("/c/|/e/")[0];
+            String clientToDCString = Data.split("/ID/|/e/")[1].trim();
+            int clientID = Integer.parseInt(clientToDCString);
+            System.out.println(clientToDCString);
             for(int i=0;i<connectedClients.size();i++){
-                ClientID client = connectedClients.get(i);
-                if(client.USER_NAME.equals(clientToDC)){
-                    System.out.println("Disconnecting: "+ clientToDC);
-                    running =false;
-                    closeStreams();
-                    clientSocket.close();
+                ServerThread client = connectedClients.get(i);
+                if(client.getID()==clientID){
+                    System.out.println("Disconnecting: "+ clientID);
+                    ServerThread sv = connectedClients.get(i);
+                    sv.closeConnection();
                     connectedClients.remove(i);
                 }
             }
@@ -181,14 +149,11 @@ public class Server implements Runnable {
 
     }
 
-    private void sendToAll(String data)throws IOException{
-        // here send to all clients
-        //for now just send back to the 1 connection
-        for(int i=0;i<connectedClients.size();i++){
-            ClientID client = connectedClients.get(i);
-            send(data,client.USER_NAME);
-        }
 
-    }
+
+
+
+
+
 
 }

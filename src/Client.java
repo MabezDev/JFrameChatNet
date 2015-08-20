@@ -5,7 +5,9 @@ import java.awt.event.*;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Random;
 
 /**
  * Created by Scott on 17/08/2015.
@@ -14,6 +16,7 @@ public class Client extends JFrame  {
 
     private String USER_NAME;
     private String IP_ADDRESS;
+    private int ID;
     private int PORT;
     private Socket clientSocket;
 
@@ -40,6 +43,7 @@ public class Client extends JFrame  {
         this.USER_NAME = UN;
         this.IP_ADDRESS = IP;
         this.PORT = port;
+        ID = 0;
 
 
 
@@ -113,7 +117,7 @@ public class Client extends JFrame  {
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                String disconnect = "/d/ " + USER_NAME + " /e/";
+                String disconnect = "/d/ " + USER_NAME + " /ID/ " + ID + " /e/";
                 send(disconnect);
                 try {
                     Thread.sleep(2000);
@@ -127,12 +131,14 @@ public class Client extends JFrame  {
 
     }
 
+
+
     private void startConnection(){
         try {
             attemptConnection();
             setUpStreams();
             //send a packet to the server to tell it out details
-            send("/c/ "+USER_NAME+" /e/");
+            send("/c/ "+USER_NAME + " /ID/ " + ID +" /e/");
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -192,6 +198,12 @@ public class Client extends JFrame  {
                 built += (char) inFromServer.read();
                 System.out.println("Built Progress: " + built);
             }
+
+            if(ID==0){
+                String clientToDCString = built.split("/ID/|/e/")[1].trim();
+                int clientID = Integer.parseInt(clientToDCString);
+                this.ID = clientID;
+            }
             System.out.println("Found end of message: " + built);
             String finishedData = built.split("/m/|/e/")[1];
             messageBox.append(finishedData + "\n\r");
@@ -202,7 +214,7 @@ public class Client extends JFrame  {
     }
 
     private void dealWithText(){
-        String messageOut = ("/m/ "+USER_NAME+": "+messageText.getText()+" /e/");
+        String messageOut = ("/m/ "+USER_NAME+": "+messageText.getText()+ " /ID/ " + ID +" /e/");
 
         send(messageOut);
         messageText.setText("");
