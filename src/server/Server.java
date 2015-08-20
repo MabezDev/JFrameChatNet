@@ -138,7 +138,7 @@ public class Server implements Runnable {
                 if(client.getID()==clientID){
                     System.out.println("Disconnecting: "+ clientID);
                     ServerThread sv = connectedClients.get(i);
-                    sv.send("/d/");
+                    //sv.send("/d/");
                     sv.closeConnection();
                     connectedClients.remove(i);
                 }

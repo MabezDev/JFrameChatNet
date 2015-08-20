@@ -92,6 +92,7 @@ public class ServerThread {
                         */
                         System.out.println("Client Disconnect. ID: "+ getID());
                         closeConnection();
+                        Server.removeTimedOutClient(getID());//needed if a client dc's uncleanly
                         try {
                             clientSocket.close();
                         } catch (IOException e2) {
