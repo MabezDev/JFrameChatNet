@@ -119,6 +119,7 @@ public class Client extends JFrame  {
             public void windowClosing(WindowEvent e) {
                 String disconnect = "/d/ " + USER_NAME + " /ID/ " + ID + " /e/";
                 send(disconnect);
+                listen.interrupt();
                 try {
                     Thread.sleep(2000);
                 }catch (Exception e1){
