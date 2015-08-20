@@ -1,9 +1,7 @@
 import javax.swing.*;
+import javax.swing.tree.ExpandVetoException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -92,14 +90,11 @@ public class Client extends JFrame  {
         listen = new Thread(new Runnable() {
             @Override
             public void run() {
-                try {
+
                     while(true) {
                         listen();
                     }
-                } catch (IOException e) {
-                    messageBox.append("Disconnected From Server.");
-                    e.printStackTrace();
-                }
+
             }
         });
 
@@ -116,12 +111,28 @@ public class Client extends JFrame  {
 
 
 
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                String disconnect = "/d/ " + USER_NAME + " /e/";
+                send(disconnect);
+                try {
+                    Thread.sleep(2000);
+                }catch (Exception e1){
+                    e1.printStackTrace();
+                }
+                //running = false;
+                //add stream closing func
+            }
+        });
+
     }
 
     private void startConnection(){
         try {
             attemptConnection();
             setUpStreams();
+            //send a packet to the server to tell it out details
+            send("/c/ "+USER_NAME+" /e/");
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -158,7 +169,7 @@ public class Client extends JFrame  {
             clientSocket = new Socket(IP_ADDRESS, PORT);
             if(clientSocket.isConnected()){
                 //show that user is connected
-                messageBox.append("Connected as :"+USER_NAME+" At: "+IP_ADDRESS+":"+PORT+ "\n\r");
+                messageBox.append("Connected as :" + USER_NAME + " At: "+IP_ADDRESS+":"+PORT+ "\n\r");
                 return true;
             }
             else{
@@ -173,21 +184,27 @@ public class Client extends JFrame  {
     }
 
 
-    private void listen() throws IOException{
-        String built ="";
-        built += (char)inFromServer.read();
-        while(!built.contains("/e/")){//handles the end of the message
-            built += (char)inFromServer.read();
-            System.out.println("Built Progress: "+built);
+    private void listen(){
+        try {
+            String built = "";
+            built += (char) inFromServer.read();
+            while (!built.contains("/e/")) {//handles the end of the message
+                built += (char) inFromServer.read();
+                System.out.println("Built Progress: " + built);
+            }
+            System.out.println("Found end of message: " + built);
+            String finishedData = built.split("/m/|/e/")[1];
+            messageBox.append(finishedData + "\n\r");
+        }catch (IOException e){
+            e.printStackTrace();
+            System.out.println("Listen function  - Client Disconnect.");
         }
-        System.out.println("Found end of message: "+ built);
-        messageBox.append(built + "\n\r");
     }
 
     private void dealWithText(){
-        messageToSend = messageText.getText();
+        String messageOut = ("/m/ "+USER_NAME+": "+messageText.getText()+" /e/");
 
-        setMessageBox(messageToSend);
+        send(messageOut);
         messageText.setText("");
 
     }
@@ -196,16 +213,15 @@ public class Client extends JFrame  {
     this is where the text would be sent to the send class to actually go to the server
      */
 
-    private void setMessageBox(String text){
-        messageToSend = USER_NAME+": " + text + " /e/";
-        //messageBox.append(USER_NAME+": " + text + "/e/"); //"\n\r"
-        System.out.println("Attempting to send: " + messageToSend);
+    private void send(String text){
+        final String messageOut = text;
+        System.out.println("Attempting to send: " + messageOut);
         Thread Send = new Thread("SendingThread"){
             public  void run(){
                 try {
                     //Send sendIt = new Send(clientSocket,messageToSend);
 
-                    outToServer.writeBytes(messageToSend);
+                    outToServer.writeBytes(messageOut);
                 } catch (IOException e){
                     e.printStackTrace();
                 }
