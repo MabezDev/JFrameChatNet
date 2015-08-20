@@ -1,3 +1,5 @@
+import server.Server;
+
 import javax.swing.*;
 import javax.swing.tree.ExpandVetoException;
 import java.awt.*;
@@ -31,6 +33,7 @@ public class Client extends JFrame  {
     private DataOutputStream outToServer;
     private InputStreamReader inFromServer;
     private final static int MAX_ATTEMPTS = 5;
+    private String lastMessage;
 
     private Thread starter;
     private boolean isConnected;
@@ -39,7 +42,7 @@ public class Client extends JFrame  {
 
     public Client(String UN, String IP, int port)  {
         super("IRC Chat");
-
+        lastMessage ="";
         this.USER_NAME = UN;
         this.IP_ADDRESS = IP;
         this.PORT = port;
@@ -91,25 +94,19 @@ public class Client extends JFrame  {
             }
         });
 
-        listen = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                isConnected =true;
-                listen();
-
-            }
-        });
 
         /*
         Establish Connection with server
          */
-        starter = new Thread(new Runnable() {
-            @Override
+
+        starter = new Thread("Starter-Thread"){
             public void run() {
                 startConnection();
+                //retryOrTimeout();
             }
-        });
+        };
         starter.start();
+
 
 
 
@@ -117,23 +114,32 @@ public class Client extends JFrame  {
             public void windowClosing(WindowEvent e) {
                 String disconnect = "/d/ " + USER_NAME + " /ID/ " + ID + " /e/";
                 send(disconnect);
-                try {
-                    Thread.sleep(2000);
-                }catch (Exception e1){
-                    e1.printStackTrace();
-                }
-                //closeConnection();
+                lastMessage = "/d/";
+
 
                 //running = false;
                 //add stream closing func
             }
         });
 
+
+
+    }
+    private void buildListenThread() {
+        listen = new Thread("Listen Thread") {
+            public void run() {
+                isConnected = true;
+                listen();
+
+            }
+        };
+        listen.start();
     }
 
     private void closeConnection(){
         try {
-            listen.interrupt();
+            //listen.interrupt();
+            listen = null;
             inFromServer.close();
             outToServer.close();
             clientSocket.close();
@@ -154,7 +160,7 @@ public class Client extends JFrame  {
         }catch (IOException e){
             e.printStackTrace();
         }
-        listen.start();
+        buildListenThread();
         starter.interrupt();
 
         //need to add timout and recon but this is throwing a weird threadexception
@@ -172,7 +178,7 @@ public class Client extends JFrame  {
                 //start Listening thread;
                 listen.start();
                 //kill starter once connected
-                starter.interrupt();
+                //starter.interrupt();
             } else {
                 numOfAttempts++;
                 System.out.println("Didnt Connect");
@@ -181,6 +187,7 @@ public class Client extends JFrame  {
         }*/
 
     }
+
 
     private boolean attemptConnection(){
         try {
@@ -195,7 +202,6 @@ public class Client extends JFrame  {
                 return false;
             }
         }catch(IOException e){
-            System.out.println("In socket catch");
             e.printStackTrace();
             return false;
         }
@@ -208,24 +214,68 @@ public class Client extends JFrame  {
                 String built = "";
                 built += (char) inFromServer.read();
                 while (!built.contains("/e/")) {//handles the end of the message
-                    built += (char) inFromServer.read();
-                    System.out.println("Built Progress: " + built);
+                    if(inFromServer.ready()) {
+                        built += (char) inFromServer.read();
+                    }else{
+                        closeConnection();
+                    }
+
                 }
 
                 if(built.startsWith("/ID/")){
                     String ID = built.split("/ID/|/e/")[1].trim();
                     int clientID = Integer.parseInt(ID);
+                    System.out.println("Setting ID to: "+clientID);
                     this.ID = clientID;
                 }
+                if(built.startsWith("/m/")){
+                    System.out.println("Found end of message: " + built);
+                    String finishedData = built.split("/m/|/ID/")[1];
+                    messageBox.append(finishedData + "\n\r");
+                }
+                if(lastMessage.startsWith("/d/")){
+                    try {
+                        Thread.sleep(2000);
+                    }catch (Exception e){
 
-                System.out.println("Found end of message: " + built);
-                String finishedData = built.split("/m/|/ID/")[1];
-                messageBox.append(finishedData + "\n\r");
+                    }
+                    closeConnection();
+                    this.dispose();
+                }
+
+
             } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Listen function  - Client Disconnect.");
+                System.out.println("Disconnected from server.");
+                closeConnection();
+                if(!lastMessage.startsWith("/d/")) {// add a clause for banned?
+                    startConnection();
+                }
             }
         }
+    }
+
+    private void retryOrTimeout(){
+        int numOfTries = 0;
+        while(numOfTries<MAX_ATTEMPTS){
+            if(attemptConnection()){
+                System.out.println("Re established connection to Server");
+
+                try {
+                    setUpStreams();
+                }catch (IOException e){
+
+                }
+                buildListenThread();
+                break;
+            }
+            numOfTries++;
+            try {
+                Thread.sleep(5000);
+            }catch (Exception e){
+
+            }
+        }
+        System.out.println("Couldn't connect connection timed out.");
     }
 
     private void dealWithText(){

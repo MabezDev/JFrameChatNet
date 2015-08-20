@@ -20,10 +20,11 @@ public class ServerThread {
     private int ID;
 
 
-    public ServerThread(Socket client){
+    public ServerThread(Socket client,int id){
         clientConnected = true;
         clientSocket = client;
-        System.out.println("In Server thread");
+        this.ID = id;
+        System.out.println("New Client Connected ID: "+ID);
         setUpStreams();
         listen();
     }
@@ -86,11 +87,10 @@ public class ServerThread {
                         Server.processData(built);
 
                     } catch (IOException e) {
-                        e.printStackTrace();
                         /*
                         add time out function try to connect back tot eh client a certain amount of time then just close the connection
                         */
-                        System.out.println("Listen function  - Client Disconnect. ID: "+ getID());
+                        System.out.println("Client Disconnect. ID: "+ getID());
                         closeConnection();
                         try {
                             clientSocket.close();
@@ -140,9 +140,9 @@ public class ServerThread {
 
     }
 
-    public void setID(int id){
+    /*public void setID(int id){
         this.ID = id;
-    }
+    }*/
 
     public int getID(){
         return ID;

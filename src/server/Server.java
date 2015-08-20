@@ -79,8 +79,7 @@ public class Server implements Runnable {
         while(running) {
             try {
                 Socket clientSocket = serverSocket.accept();
-                ServerThread s = new ServerThread(clientSocket);
-                s.setID(UniqueID.getIdentifier());
+                ServerThread s = new ServerThread(clientSocket,UniqueID.getIdentifier());
                 connectedClients.add(s);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -139,6 +138,7 @@ public class Server implements Runnable {
                 if(client.getID()==clientID){
                     System.out.println("Disconnecting: "+ clientID);
                     ServerThread sv = connectedClients.get(i);
+                    sv.send("/d/");
                     sv.closeConnection();
                     connectedClients.remove(i);
                 }
