@@ -36,6 +36,8 @@ public class ServerThread {
             outToClient = new DataOutputStream(clientSocket.getOutputStream());
             outToClient.flush();
             inFromClient = new InputStreamReader(clientSocket.getInputStream());
+            //send ID packet to tell client its ID
+            send("/ID/ "+Integer.toString(getID())+" /e/");
         }catch (IOException e){
 
         }
@@ -53,6 +55,7 @@ public class ServerThread {
                         outToClient.writeBytes(Data);
 
                     } catch (IOException e) {
+                        //need timeout tryer here then disconnect if it cant be reached
                         e.printStackTrace();
                     }
                 }
@@ -71,25 +74,24 @@ public class ServerThread {
                 System.out.println("Now Listening");
                 while(clientConnected){
                     try {
-                        // need to set up a stream every time
-                        //serviceClients();
                         String built = "";
                         built += (char) inFromClient.read();
                         while (!built.contains("/e/")) {//handles the end of the message
                             built += (char) inFromClient.read();
-                            System.out.println("Built Progress: " + built);
                         }
-                        //in.close();// not needed as we want to keep the connection open for server replies
-                        System.out.println("Found end of message: " + built);
                         if(isIDZero(built)){
                              built = addId(built);
+                            //send a notification message to tell client its ID
                         }
                         Server.processData(built);
 
                     } catch (IOException e) {
                         e.printStackTrace();
-                        System.out.println("Listen function  - Client Disconnect.");
-
+                        /*
+                        add time out function try to connect back tot eh client a certain amount of time then just close the connection
+                        */
+                        System.out.println("Listen function  - Client Disconnect. ID: "+ getID());
+                        closeConnection();
                         try {
                             clientSocket.close();
                         } catch (IOException e2) {
@@ -108,8 +110,6 @@ public class ServerThread {
 
     private boolean isIDZero(String built){
         String clientToDCString = built.split("/ID/|/e/")[1].trim();
-
-        System.out.println("Is Zero String: "+clientToDCString);
         int clientID = Integer.parseInt(clientToDCString);
         if(clientID==0){
             System.out.println("ID is zero");
@@ -128,9 +128,12 @@ public class ServerThread {
 
     public void closeConnection(){
         try{
+            receive.interrupt();
             inFromClient.close();
             outToClient.close();
             clientSocket.close();
+            clientConnected = false;
+
         }catch (IOException e){
             e.printStackTrace();
         }

@@ -80,7 +80,7 @@ public class Server implements Runnable {
             try {
                 Socket clientSocket = serverSocket.accept();
                 ServerThread s = new ServerThread(clientSocket);
-                s.setID(randInt(1,20));
+                s.setID(UniqueID.getIdentifier());
                 connectedClients.add(s);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -147,6 +147,15 @@ public class Server implements Runnable {
 
 
 
+    }
+
+    public static void removeTimedOutClient(int ID){ //reserved for serverThread to call when a client times out unexpectedly
+        for(int i=0;i<connectedClients.size();i++){
+            ServerThread client = connectedClients.get(i);
+            if(client.getID()==ID){
+                connectedClients.remove(i);
+            }
+        }
     }
 
 

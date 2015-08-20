@@ -94,10 +94,8 @@ public class Client extends JFrame  {
         listen = new Thread(new Runnable() {
             @Override
             public void run() {
-
-                    while(true) {
-                        listen();
-                    }
+                isConnected =true;
+                listen();
 
             }
         });
@@ -119,17 +117,30 @@ public class Client extends JFrame  {
             public void windowClosing(WindowEvent e) {
                 String disconnect = "/d/ " + USER_NAME + " /ID/ " + ID + " /e/";
                 send(disconnect);
-                listen.interrupt();
                 try {
                     Thread.sleep(2000);
                 }catch (Exception e1){
                     e1.printStackTrace();
                 }
+                //closeConnection();
+
                 //running = false;
                 //add stream closing func
             }
         });
 
+    }
+
+    private void closeConnection(){
+        try {
+            listen.interrupt();
+            inFromServer.close();
+            outToServer.close();
+            clientSocket.close();
+            isConnected = false;
+        }catch (IOException e){
+
+        }
     }
 
 
@@ -139,7 +150,7 @@ public class Client extends JFrame  {
             attemptConnection();
             setUpStreams();
             //send a packet to the server to tell it out details
-            send("/c/ "+USER_NAME + " /ID/ " + ID +" /e/");
+            //send("/c/ "+USER_NAME + " /ID/ " + ID +" /e/");
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -192,25 +203,28 @@ public class Client extends JFrame  {
 
 
     private void listen(){
-        try {
-            String built = "";
-            built += (char) inFromServer.read();
-            while (!built.contains("/e/")) {//handles the end of the message
+        while(isConnected) {
+            try {
+                String built = "";
                 built += (char) inFromServer.read();
-                System.out.println("Built Progress: " + built);
-            }
+                while (!built.contains("/e/")) {//handles the end of the message
+                    built += (char) inFromServer.read();
+                    System.out.println("Built Progress: " + built);
+                }
 
-            if(ID==0){
-                String clientToDCString = built.split("/ID/|/e/")[1].trim();
-                int clientID = Integer.parseInt(clientToDCString);
-                this.ID = clientID;
+                if(built.startsWith("/ID/")){
+                    String ID = built.split("/ID/|/e/")[1].trim();
+                    int clientID = Integer.parseInt(ID);
+                    this.ID = clientID;
+                }
+
+                System.out.println("Found end of message: " + built);
+                String finishedData = built.split("/m/|/ID/")[1];
+                messageBox.append(finishedData + "\n\r");
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("Listen function  - Client Disconnect.");
             }
-            System.out.println("Found end of message: " + built);
-            String finishedData = built.split("/m/|/e/")[1];
-            messageBox.append(finishedData + "\n\r");
-        }catch (IOException e){
-            e.printStackTrace();
-            System.out.println("Listen function  - Client Disconnect.");
         }
     }
 
