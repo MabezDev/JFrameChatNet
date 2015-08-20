@@ -114,7 +114,7 @@ public class Client extends JFrame  {
             public void windowClosing(WindowEvent e) {
                 String disconnect = "/d/ " + USER_NAME + " /ID/ " + ID + " /e/";
                 send(disconnect);
-                lastMessage = "/d/";
+                //lastMessage = "/d/";
 
 
                 //running = false;
@@ -214,11 +214,7 @@ public class Client extends JFrame  {
                 String built = "";
                 built += (char) inFromServer.read();
                 while (!built.contains("/e/")) {//handles the end of the message
-                    if(inFromServer.ready()) {
-                        built += (char) inFromServer.read();
-                    }else{
-                        closeConnection();
-                    }
+                    built += (char) inFromServer.read();
 
                 }
 
@@ -233,7 +229,7 @@ public class Client extends JFrame  {
                     String finishedData = built.split("/m/|/ID/")[1];
                     messageBox.append(finishedData + "\n\r");
                 }
-                /*if(lastMessage.startsWith("/d/")){
+                if(lastMessage.startsWith("/d/")){
                     try {
                         Thread.sleep(2000);
                     }catch (Exception e){
@@ -241,15 +237,16 @@ public class Client extends JFrame  {
                     }
                     closeConnection();
                     this.dispose();
-                }*/
+                }
 
 
             } catch (IOException e) {
-                //System.out.println("Disconnected from server.");
-                //closeConnection();
-                /*if(!lastMessage.startsWith("/d/")) {// add a clause for banned?
+                System.out.println("Disconnected from server.");
+
+                if(!lastMessage.startsWith("/d/")) {// add a clause for banned?
+                    closeConnection();
                     startConnection();
-                }*/
+                }
             }
         }
     }
