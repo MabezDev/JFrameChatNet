@@ -149,6 +149,7 @@ public class Client extends JFrame  {
             outToServer = null;
 
             clientSocket.close();
+
             isConnected = false;
         }catch (IOException e){
 
@@ -253,10 +254,8 @@ public class Client extends JFrame  {
 
     private void dealWithText(){
         String messageOut = ("/m/ "+USER_NAME+": "+messageText.getText()+ " /ID/ " + ID +" /e/");
-
         send(messageOut);
         messageText.setText("");
-
     }
 
     /*

@@ -63,6 +63,7 @@ public class Server implements Runnable {
     }
 
     private void manageServer(){
+
         Scanner io = new Scanner(System.in);
         while(true){
             String command = io.nextLine();
@@ -70,19 +71,8 @@ public class Server implements Runnable {
             if(command.startsWith("/")){
                 String splitCmd = command.split("/")[1];
                 if(splitCmd.equals("quit")){
-                    if(connectedClients.size()>0) {
-                        for (int j = 0; j < connectedClients.size(); j++) {
-                            System.out.println("connectedArraySize: " + connectedClients.size() + "Position: " + j);
-                            kick(connectedClients.get(j).getID(), "Server is shutting down. ");
-
-                        }
-                    }
-                    /*try {
-                        serverSocket.close();
-                    }catch (IOException i){
-                        i.printStackTrace();
-                    }*/
-                    System.exit(0);
+                    kickAll("Server shutting down.");
+                    //System.exit(0);
                 }
                 if(splitCmd.equals("help")){
                     System.out.println("=====-Help-=====");
@@ -90,7 +80,7 @@ public class Server implements Runnable {
                     System.out.println("/quit - disconnects all clients and closes server.");
                 }
                 if(splitCmd.startsWith("kick")){
-                    String clienttoKick = splitCmd.split(" ")[1].trim();
+                    String clientToKick = splitCmd.split(" ")[1].trim();
                     String[] reasonArr = splitCmd.split(" ");
                     System.out.println("Length: "+reasonArr.length);
                     String reason ="";
@@ -100,14 +90,14 @@ public class Server implements Runnable {
                         }
                     }
 
-                    System.out.println("Start kick:" +clienttoKick);
-                    if(clienttoKick.matches(".*\\d.*")){
+                    System.out.println("Start kick:" +clientToKick);
+                    if(clientToKick.matches(".*\\d.*")){
                         // contains a number
-                        kick(Integer.parseInt(clienttoKick),reason);
-                        System.out.println("Kicking: " + Integer.parseInt(clienttoKick));
+                        kick(Integer.parseInt(clientToKick),reason);
+                        System.out.println("Kicking: " + Integer.parseInt(clientToKick));
                     } else{
-                        kick(clienttoKick,reason);
-                        System.out.println("Kicking: "+ clienttoKick);
+                        kick(clientToKick,reason);
+                        System.out.println("Kicking: "+ clientToKick);
                         // does not contain a number
                     }
                 }
@@ -117,14 +107,20 @@ public class Server implements Runnable {
 
     }
 
-    public void kick(int ID,String reason){
+    private void kickAll(String reason){
+        for(ServerThread c :connectedClients){
+            System.out.println("Kicking: "+c.getID());
+            c.kick(reason);
+        }
+    }
+
+    /*public void kick(int ID,String reason){
         for(int i = 0; i<connectedClients.size();i++){
             ServerThread client = connectedClients.get(i);
             if(client.getID()==ID){
                 client.send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+client.getID()+" /e/");
                 client.closeConnection();
                 connectedClients.remove(i);
-
             }
             System.out.println("No such client found on server.");
         }
@@ -137,10 +133,9 @@ public class Server implements Runnable {
                 client.send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+client.getID()+" /e/");
                 client.closeConnection();
                 connectedClients.remove(i);
-
             }
         }
-    }
+    }*/
 
     private void mngServer(){
         Thread mng = new Thread(new Runnable() {
@@ -234,6 +229,26 @@ public class Server implements Runnable {
         for(int i=0;i<connectedClients.size();i++){
             ServerThread client = connectedClients.get(i);
             if(client.getID()==ID){
+                connectedClients.remove(i);
+            }
+        }
+    }
+
+    public static void kick(int ID,String reason){ //reserved for serverThread to call when a client times out unexpectedly
+        for(int i=0;i<connectedClients.size();i++){
+            ServerThread client = connectedClients.get(i);
+            if(client.getID()==ID){
+                client.kick(reason);
+                connectedClients.remove(i);
+            }
+        }
+    }
+
+    public void kick(String UserName, String reason){
+        for(int i = 0; i<connectedClients.size();i++){
+            ServerThread client = connectedClients.get(i);
+            if(client.getUserName().trim().equals(UserName.trim())){
+                client.kick(reason);
                 connectedClients.remove(i);
             }
         }

@@ -32,8 +32,15 @@ public class ServerThread {
         listen();
     }
 
+    public void kick(String reason){
+        try{
+            send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+getID()+" /e/");
+            Server.removeTimedOutClient(getID());
+        }catch (Exception e){
+            Server.removeTimedOutClient(getID());
+        }
 
-
+    }
 
     private void setUpStreams(){
         try {
