@@ -230,6 +230,11 @@ public class Client extends JFrame  {
                     String finishedData = built.split("/m/|/ID/")[1];
                     messageBox.append(finishedData + "\n\r");
                 }
+                if(built.startsWith("/k/")){
+                    System.out.println("Kicked!");
+                    String toDisplay = built.split("/k/|/ID/")[1];
+                    messageBox.append(toDisplay + "\n\r");
+                }
                 if(lastMessage.startsWith("/d/")){
                     try {
                         Thread.sleep(2000);

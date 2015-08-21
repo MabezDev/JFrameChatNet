@@ -76,13 +76,22 @@ public class Server implements Runnable {
                 }
                 if(splitCmd.startsWith("kick")){
                     String clienttoKick = splitCmd.split(" ")[1].trim();
+                    String[] reasonArr = splitCmd.split(" ");
+                    System.out.println("Length: "+reasonArr.length);
+                    String reason ="";
+                    if(reasonArr.length>=2){
+                        for(int i=2;i<reasonArr.length;i++){
+                            reason += " "+reasonArr[i];
+                        }
+                    }
+
                     System.out.println("Start kick:" +clienttoKick);
                     if(clienttoKick.matches(".*\\d.*")){
                         // contains a number
-                        kick(Integer.parseInt(clienttoKick));
+                        kick(Integer.parseInt(clienttoKick),reason);
                         System.out.println("Kicking: " + Integer.parseInt(clienttoKick));
                     } else{
-                        kick(clienttoKick);
+                        kick(clienttoKick,reason);
                         System.out.println("Kicking: "+ clienttoKick);
                         // does not contain a number
                     }
@@ -93,11 +102,11 @@ public class Server implements Runnable {
 
     }
 
-    public void kick(int ID){
+    public void kick(int ID,String reason){
         for(int i = 0; i<connectedClients.size();i++){
             ServerThread client = connectedClients.get(i);
             if(client.getID()==ID){
-                client.send("/k/ You have been kicked /ID/ "+client.getID()+" /e/");
+                client.send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+client.getID()+" /e/");
                 client.closeConnection();
                 connectedClients.remove(i);
                 break;
@@ -106,13 +115,13 @@ public class Server implements Runnable {
         }
     }
 
-    public void kick(String UserName){
+    public void kick(String UserName, String reason){
         for(int i = 0; i<connectedClients.size();i++){
             ServerThread client = connectedClients.get(i);
-            if(client.getUserName()==UserName){
-                client.send("/k/ You have been kicked /ID/ "+client.getID()+" /e/");
+            if(client.getUserName().trim().equals(UserName.trim())){
+                client.send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+client.getID()+" /e/");
                 client.closeConnection();
-                connectedClients.remove(i);
+                //connectedClients.remove(i);
                 break;
             }
         }
