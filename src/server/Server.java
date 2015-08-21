@@ -69,6 +69,21 @@ public class Server implements Runnable {
             System.out.println(command);
             if(command.startsWith("/")){
                 String splitCmd = command.split("/")[1];
+                if(splitCmd.equals("quit")){
+                    if(connectedClients.size()>0) {
+                        for (int j = 0; j < connectedClients.size(); j++) {
+                            System.out.println("connectedArraySize: " + connectedClients.size() + "Position: " + j);
+                            kick(connectedClients.get(j).getID(), "Server is shutting down. ");
+
+                        }
+                    }
+                    /*try {
+                        serverSocket.close();
+                    }catch (IOException i){
+                        i.printStackTrace();
+                    }*/
+                    System.exit(0);
+                }
                 if(splitCmd.equals("help")){
                     System.out.println("=====-Help-=====");
                     System.out.println("/kick [ClientID or Username] - kicks the selected client");
@@ -109,7 +124,7 @@ public class Server implements Runnable {
                 client.send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+client.getID()+" /e/");
                 client.closeConnection();
                 connectedClients.remove(i);
-                break;
+
             }
             System.out.println("No such client found on server.");
         }
@@ -121,8 +136,8 @@ public class Server implements Runnable {
             if(client.getUserName().trim().equals(UserName.trim())){
                 client.send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+client.getID()+" /e/");
                 client.closeConnection();
-                //connectedClients.remove(i);
-                break;
+                connectedClients.remove(i);
+
             }
         }
     }
