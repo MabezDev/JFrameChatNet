@@ -17,9 +17,18 @@ public class ServerMain {
 
 
     public static void main(String[] args) throws IOException{
-        int port;
+        int port = 0;
+        if(args.length>0){
+            port = Integer.parseInt(args[0]);
+        }else {
+            System.out.println("Requires Port argument, Correct Usage: - server.jar [port]");
+            try {
+                Thread.sleep(2000);
+            }catch (Exception e){
 
-        port = 7777;
+            }
+            System.exit(0);
+        }
         System.out.println("Starting Server. Binding to port: "+port);
         new ServerMain(port);
 

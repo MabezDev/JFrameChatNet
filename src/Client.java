@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Random;
 
 /**
@@ -33,6 +34,7 @@ public class Client extends JFrame  {
     private DataOutputStream outToServer;
     private InputStreamReader inFromServer;
     private final static int MAX_ATTEMPTS = 5;
+    private int numOfAttempts;
     private String lastMessage;
 
     private Thread starter;
@@ -46,7 +48,8 @@ public class Client extends JFrame  {
         this.USER_NAME = UN;
         this.IP_ADDRESS = IP;
         this.PORT = port;
-        ID = 0;
+        this.ID = 0;
+        numOfAttempts =0;
 
 
 
@@ -101,8 +104,7 @@ public class Client extends JFrame  {
 
         starter = new Thread("Starter-Thread"){
             public void run() {
-                startConnection();
-                //retryOrTimeout();
+                attemptConnection();
             }
         };
         starter.start();
@@ -126,6 +128,10 @@ public class Client extends JFrame  {
 
     }
     private void buildListenThread() {
+        if(listen!=null){
+            listen.interrupt();
+            listen=null;
+        }
         listen = new Thread("Listen Thread") {
             public void run() {
                 isConnected = true;
@@ -138,10 +144,10 @@ public class Client extends JFrame  {
 
     private void closeConnection(){
         try {
-            //listen.interrupt();
-            listen = null;
-            inFromServer.close();
-            outToServer.close();
+            inFromServer = null;
+
+            outToServer = null;
+
             clientSocket.close();
             isConnected = false;
         }catch (IOException e){
@@ -150,51 +156,16 @@ public class Client extends JFrame  {
     }
 
 
-
-    private void startConnection(){
-        try {
-            attemptConnection();
-            setUpStreams();
-            //send a packet to the server to tell it out details
-            //send("/c/ "+USER_NAME + " /ID/ " + ID +" /e/");
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-        buildListenThread();
-        starter.interrupt();
-
-        //need to add timout and recon but this is throwing a weird threadexception
-        /*int numOfAttempts = 0;
-
-        while(numOfAttempts < MAX_ATTEMPTS) {
-            isConnected = attemptConnection();
-            if(isConnected){
-                //open IO streams to receive and send data
-                try {
-                    setUpStreams();
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-                //start Listening thread;
-                listen.start();
-                //kill starter once connected
-                //starter.interrupt();
-            } else {
-                numOfAttempts++;
-                System.out.println("Didnt Connect");
-                //
-            }
-        }*/
-
-    }
-
-
     private boolean attemptConnection(){
         try {
             clientSocket = new Socket(IP_ADDRESS, PORT);
-            if(clientSocket.isConnected()){
+            setUpStreams();
+            if(outToServer!=null && inFromServer!=null){
                 //show that user is connected
                 messageBox.append("Connected as :" + USER_NAME + " At: "+IP_ADDRESS+":"+PORT+ "\n\r");
+                numOfAttempts = 0;
+                buildListenThread();
+                starter.interrupt();
                 return true;
             }
             else{
@@ -215,7 +186,6 @@ public class Client extends JFrame  {
                 built += (char) inFromServer.read();
                 while (!built.contains("/e/")) {//handles the end of the message
                     built += (char) inFromServer.read();
-
                 }
 
                 if(built.startsWith("/ID/")){
@@ -234,6 +204,7 @@ public class Client extends JFrame  {
                     System.out.println("Kicked!");
                     String toDisplay = built.split("/k/|/ID/")[1];
                     messageBox.append(toDisplay + "\n\r");
+                    closeConnection();
                 }
                 if(lastMessage.startsWith("/d/")){
                     try {
@@ -248,38 +219,37 @@ public class Client extends JFrame  {
 
             } catch (IOException e) {
                 System.out.println("Disconnected from server.");
+                e.printStackTrace();
+                isConnected = false;
 
                 if(!lastMessage.startsWith("/d/")) {// add a clause for banned?
                     closeConnection();
-                    startConnection();
+                    // add if statement to check timeouts
+                    while(numOfAttempts<MAX_ATTEMPTS){
+                        try {
+                            Thread.sleep(5000);
+                        }catch (Exception e2){
+
+                        }
+                        if(attemptConnection()==true){
+                            System.out.println("Reconnected");
+                            messageBox.append("Reconnected."+"\n\r");
+                        }
+                        numOfAttempts++;
+                        messageBox.append("Disconnected. Retrying connection. Attempt: "+numOfAttempts+"\n\r");
+                    }
+                    System.out.println("Couldn't reconnect");
+                    messageBox.append("Server connection failed. The remote host closed the connection."+"\n\r");
+
+
+
+
+
                 }
             }
         }
     }
 
-    private void retryOrTimeout(){
-        int numOfTries = 0;
-        while(numOfTries<MAX_ATTEMPTS){
-            if(attemptConnection()){
-                System.out.println("Re established connection to Server");
-
-                try {
-                    setUpStreams();
-                }catch (IOException e){
-
-                }
-                buildListenThread();
-                break;
-            }
-            numOfTries++;
-            try {
-                Thread.sleep(5000);
-            }catch (Exception e){
-
-            }
-        }
-        System.out.println("Couldn't connect connection timed out.");
-    }
 
     private void dealWithText(){
         String messageOut = ("/m/ "+USER_NAME+": "+messageText.getText()+ " /ID/ " + ID +" /e/");
@@ -299,8 +269,6 @@ public class Client extends JFrame  {
         Thread Send = new Thread("SendingThread"){
             public  void run(){
                 try {
-                    //Send sendIt = new Send(clientSocket,messageToSend);
-
                     outToServer.writeBytes(messageOut);
                 } catch (IOException e){
                     e.printStackTrace();
@@ -313,9 +281,14 @@ public class Client extends JFrame  {
     }
 
     private void setUpStreams() throws IOException{
-        outToServer = new DataOutputStream(clientSocket.getOutputStream());
-        outToServer.flush();
-        inFromServer = new  InputStreamReader(clientSocket.getInputStream());
+        try {
+            outToServer = new DataOutputStream(clientSocket.getOutputStream());
+            outToServer.flush();
+            inFromServer = new InputStreamReader(clientSocket.getInputStream());
+        }catch (SocketException socketClosed){
+            socketClosed.printStackTrace();
+            closeConnection();
+        }
     }
 
 
