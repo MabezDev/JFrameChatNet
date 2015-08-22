@@ -78,6 +78,20 @@ public class Server implements Runnable {
                     }
 
                 }
+                if(splitCmd.startsWith("list")){
+                    System.out.println(printAllClients());
+                }
+                if(splitCmd.startsWith("kickall")){
+                    String[] reasonArr = splitCmd.split(" ");
+                    System.out.println("Length: " + reasonArr.length);
+                    String reason ="";
+                    if(reasonArr.length>=2){
+                        for(int i=2;i<reasonArr.length;i++){
+                            reason += " "+reasonArr[i];
+                        }
+                    }
+                    kickAll(reason);
+                }
                 if(splitCmd.equals("help")){
                     System.out.println("=====-Help-=====");
                     System.out.println("/kick [ClientID or Username] - kicks the selected client");
@@ -111,11 +125,16 @@ public class Server implements Runnable {
 
     }
 
-    private static void printAllClients(){
+    private static String printAllClients(){
+        String List = "Clients: "+"\n\r";
         for(int i = 0;i<connectedClients.size();i++){
             ServerThread c = connectedClients.get(i);
-            System.out.println("Client : "+c.getID());
+            if(i==connectedClients.size()){
+                List += c.getUserName();
+            }
+            List += c.getUserName()+ "\n\r";
         }
+        return List;
     }
 
     private void kickAll(String reason){
@@ -127,7 +146,6 @@ public class Server implements Runnable {
             for(int i =0;i<connectedClients.size();i++){
                 ServerThread c = connectedClients.get(i);
                 c.kick(reason);
-                System.out.println("Position: "+i+", Size of array: "+connectedClients.size());
             }
 
         }
@@ -251,7 +269,6 @@ public class Server implements Runnable {
             if(client.getID()==ID){
                 System.out.println("Found client, removed from clientList");
                 connectedClients.remove(i);
-                printAllClients();
             }
         }
     }
