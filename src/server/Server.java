@@ -70,9 +70,13 @@ public class Server implements Runnable {
             System.out.println(command);
             if(command.startsWith("/")){
                 String splitCmd = command.split("/")[1];
-                if(splitCmd.equals("quit")){
+                if(splitCmd.equals("quit")){;
                     kickAll("Server shutting down.");
-                    //System.exit(0);
+                    if(connectedClients.size()==0){
+                        System.out.println("Now Exiting.");
+                        System.exit(0);
+                    }
+
                 }
                 if(splitCmd.equals("help")){
                     System.out.println("=====-Help-=====");
@@ -82,7 +86,7 @@ public class Server implements Runnable {
                 if(splitCmd.startsWith("kick")){
                     String clientToKick = splitCmd.split(" ")[1].trim();
                     String[] reasonArr = splitCmd.split(" ");
-                    System.out.println("Length: "+reasonArr.length);
+                    System.out.println("Length: " + reasonArr.length);
                     String reason ="";
                     if(reasonArr.length>=2){
                         for(int i=2;i<reasonArr.length;i++){
@@ -107,11 +111,27 @@ public class Server implements Runnable {
 
     }
 
-    private void kickAll(String reason){
-        for(ServerThread c :connectedClients){
-            System.out.println("Kicking: "+c.getID());
-            c.kick(reason);
+    private static void printAllClients(){
+        for(int i = 0;i<connectedClients.size();i++){
+            ServerThread c = connectedClients.get(i);
+            System.out.println("Client : "+c.getID());
         }
+    }
+
+    private void kickAll(String reason){
+        boolean allkicked = false;
+        while(!allkicked){
+            if(connectedClients.size()==0){
+                allkicked=true;
+            }
+            for(int i =0;i<connectedClients.size();i++){
+                ServerThread c = connectedClients.get(i);
+                c.kick(reason);
+                System.out.println("Position: "+i+", Size of array: "+connectedClients.size());
+            }
+
+        }
+
     }
 
     /*public void kick(int ID,String reason){
@@ -229,7 +249,9 @@ public class Server implements Runnable {
         for(int i=0;i<connectedClients.size();i++){
             ServerThread client = connectedClients.get(i);
             if(client.getID()==ID){
+                System.out.println("Found client, removed from clientList");
                 connectedClients.remove(i);
+                printAllClients();
             }
         }
     }
@@ -239,17 +261,15 @@ public class Server implements Runnable {
             ServerThread client = connectedClients.get(i);
             if(client.getID()==ID){
                 client.kick(reason);
-                connectedClients.remove(i);
             }
         }
     }
 
-    public void kick(String UserName, String reason){
+    public static  void kick(String UserName, String reason){
         for(int i = 0; i<connectedClients.size();i++){
             ServerThread client = connectedClients.get(i);
             if(client.getUserName().trim().equals(UserName.trim())){
                 client.kick(reason);
-                connectedClients.remove(i);
             }
         }
     }

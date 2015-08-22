@@ -35,9 +35,9 @@ public class ServerThread {
     public void kick(String reason){
         try{
             send("/k/ You have been kicked. Reason: "+reason+" /ID/ "+getID()+" /e/");
+            Thread.sleep(1000);//give time to send message
             Server.removeTimedOutClient(getID());
         }catch (Exception e){
-            Server.removeTimedOutClient(getID());
         }
 
     }
