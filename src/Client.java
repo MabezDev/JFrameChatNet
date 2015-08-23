@@ -254,8 +254,8 @@ public class Client extends JFrame  {
 
     private void dealWithText(){
         String messageOut = ("/m/ "+USER_NAME+": "+messageText.getText()+ " /ID/ " + ID +" /e/");
-        send(messageOut);
-        messageText.setText("");
+            send(messageOut);
+            messageText.setText("");
     }
 
     /*

@@ -220,19 +220,6 @@ public class Server implements Runnable {
 
     }
 
-    public static int randInt(int min, int max) {
-
-        // NOTE: Usually this should be a field rather than a method
-        // variable so that it is not re-seeded every call.
-        Random rand = new Random();
-
-        // nextInt is normally exclusive of the top value,
-        // so add 1 to make it inclusive
-        int randomNum = rand.nextInt((max - min) + 1) + min;
-
-        return randomNum;
-    }
-
     public static void processData(String data)throws IOException{
         String Data = data;
         if(Data.startsWith("/m/")) {
@@ -246,7 +233,6 @@ public class Server implements Runnable {
         if(Data.startsWith("/d/")){
             String clientToDCString = Data.split("/ID/|/e/")[1].trim();
             int clientID = Integer.parseInt(clientToDCString);
-            System.out.println(clientToDCString);
             for(int i=0;i<connectedClients.size();i++){
                 ServerThread client = connectedClients.get(i);
                 if(client.getID()==clientID){
